@@ -1,0 +1,82 @@
+// 在服务器项目中
+package org.example;
+import com.google.gson.Gson; // 如果使用 Gson
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.Map; // 用于解析 JSON
+
+public class ClientHandler extends Thread {
+    Socket clientSocket;
+    private GameServer server;
+    private PrintWriter out;
+    private BufferedReader in;
+    public int playerId = -1; // 由 GameServer 分配
+    private Gson gson = new Gson(); // 如果使用 Gson
+
+    public ClientHandler(Socket socket, GameServer server) {
+        this.clientSocket = socket;
+        this.server = server;
+    }
+
+    public void run() {
+        try {
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+            String inputLine;
+            while ((inputLine = in.readLine()) != null) {
+                System.out.println("Server received from client " + (playerId != -1 ? playerId : "unknown") + ": " + inputLine);
+                // 解析 JSON 消息
+                try {
+                    Map<String, Object> message = gson.fromJson(inputLine, Map.class);
+                    String type = (String) message.get("type");
+
+                    if ("CONNECT".equals(type) && message.containsKey("playerName")) {
+                        String playerName = (String) message.get("playerName");
+                        server.handleClientConnect(this, playerName);
+                    } else if (playerId != -1) { // 确保已连接并分配 ID
+                        if ("PLAYER_UPDATE".equals(type)) {
+                            double x = (Double) message.get("x");
+                            double y = (Double) message.get("y");
+                            server.updatePlayerPosition(playerId, (float) x, (float) y);
+                        } else if ("ATE_FOOD".equals(type)) {
+                            // foodId 应该是 Double 因为 Gson 默认数字是 Double
+                            int foodId = ((Double) message.get("foodId")).intValue();
+                            server.handlePlayerAteFood(playerId, foodId);
+                        }
+                        // 处理其他类型的消息
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error parsing JSON from client " + playerId + ": " + inputLine + " - " + e.getMessage());
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("Client " + playerId + " connection error: " + e.getMessage());
+        } finally {
+            server.removeClient(this);
+            try {
+                clientSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            System.out.println("Client " + playerId + " disconnected.");
+        }
+    }
+
+    public void sendMessage(String message) {
+        if (out != null) {
+            out.println(message);
+        }
+    }
+
+    public int getPlayerId() {
+        return playerId;
+    }
+
+    public void setPlayerId(int playerId) {
+        this.playerId = playerId;
+    }
+}

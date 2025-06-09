@@ -1,0 +1,11 @@
+{
+    // 这个设置是连接 vcpkg 和 CMake 的关键！
+    // 它告诉 CMake 使用 vcpkg 的工具链文件来查找库。
+    // !!! 请确保下面的路径是你自己电脑上 vcpkg 的正确路径 !!!
+    "cmake.configureArgs": [
+        "-DCMAKE_TOOLCHAIN_FILE=E:/game-server-cpp/dev-cpp/vcpkg/scripts/buildsystems/vcpkg.cmake"
+    ],
+
+    // 建议的格式化设置，可以忽略
+    "editor.formatOnSave": true
+}

@@ -1,0 +1,398 @@
+package org.example; // 确保这是你的服务器包名
+
+import com.google.gson.Gson;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+// 假设你有一个简单的日志类或直接使用System.out，这里用Log.d模拟Android日志风格
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+
+class Log { // 简单的日志模拟，或者你可以引入真正的日志库如 SLF4J/Logback
+    private static final Logger LOGGER = Logger.getLogger(GameServer.class.getName());
+    public static void d(String tag, String message) {
+        LOGGER.log(Level.INFO, tag + ": " + message);
+    }
+    public static void e(String tag, String message, Throwable throwable) {
+        LOGGER.log(Level.SEVERE, tag + ": " + message, throwable);
+    }
+    public static void w(String tag, String message) {
+        LOGGER.log(Level.WARNING, tag + ": " + message);
+    }
+}
+
+
+public class GameServer {
+    private static final String TAG_SERVER = "GameServer";
+    private static final int PORT = 12345;
+    private static final int MAX_PLAYERS = 3;
+    private static final int GAME_DURATION_SECONDS = 60; // 1 minute
+    private static final int SCREEN_WIDTH = 2400;
+    private static final int SCREEN_HEIGHT = 1600;
+    private static final int MAX_FOODS_ON_SCREEN = 50;
+    private static final float PLAYER_RADIUS = 30f;
+    private static final long BROADCAST_INTERVAL_MS = 50; // Broadcast game state every 50ms (20Hz)
+
+    private List<ClientHandler> clients = new CopyOnWriteArrayList<>();
+    private Map<Integer, PlayerData> players = new ConcurrentHashMap<>();
+    private List<FoodData> foods = new CopyOnWriteArrayList<>();
+    private AtomicInteger nextPlayerId = new AtomicInteger(0);
+    private AtomicInteger nextFoodId = new AtomicInteger(0);
+    private Gson gson = new Gson();
+
+    private Timer countdownTimer; // For 1-second game countdown ticks
+    private ScheduledExecutorService broadcastScheduler; // For frequent game state broadcasts
+
+    private volatile int remainingTimeSeconds = GAME_DURATION_SECONDS;
+    private volatile boolean gameRunning = false;
+    private String[] playerColors = {"#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF"}; // Added more colors
+
+
+    public void start() {
+        Log.d(TAG_SERVER, "Game Server starting on port " + PORT);
+
+        // Initialize and start the broadcast scheduler
+        broadcastScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = Executors.defaultThreadFactory().newThread(r);
+            t.setDaemon(true); // Make broadcast thread daemon
+            return t;
+        });
+        broadcastScheduler.scheduleAtFixedRate(this::broadcastGameStateIfRunning,
+                BROADCAST_INTERVAL_MS,
+                BROADCAST_INTERVAL_MS,
+                TimeUnit.MILLISECONDS);
+        Log.d(TAG_SERVER, "Broadcast scheduler started, interval: " + BROADCAST_INTERVAL_MS + "ms");
+
+        // Initialize some food
+        for (int i = 0; i < MAX_FOODS_ON_SCREEN; i++) {
+            spawnNewFood(false); // Don't broadcast yet, game hasn't started
+        }
+
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+            while (!Thread.currentThread().isInterrupted()) { // Allow server thread to be interrupted
+                if (clients.size() < MAX_PLAYERS) {
+                    Socket clientSocket = serverSocket.accept();
+                    Log.d(TAG_SERVER, "New client connected: " + clientSocket.getInetAddress());
+                    ClientHandler clientHandler = new ClientHandler(clientSocket, this);
+                    clientHandler.start(); // ClientHandler thread will handle its lifecycle
+                } else {
+                    // Server is full, briefly pause to avoid busy-waiting
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        Log.w(TAG_SERVER, "Server accept loop interrupted while full.");
+                        Thread.currentThread().interrupt(); // Preserve interrupt status
+                        break; // Exit loop if server thread is interrupted
+                    }
+                }
+            }
+        } catch (IOException e) {
+            if (!Thread.currentThread().isInterrupted()) { // Log only if not an interrupt-related closure
+                Log.e(TAG_SERVER, "Server socket error: " + e.getMessage(), e);
+            }
+        } finally {
+            Log.d(TAG_SERVER, "Server accept loop finished. Shutting down...");
+            shutdown();
+        }
+    }
+
+    public synchronized void handleClientConnect(ClientHandler clientHandler, String playerName) {
+        if (clients.size() >= MAX_PLAYERS) {
+            Map<String, Object> serverFullMsg = new HashMap<>();
+            serverFullMsg.put("type", "SERVER_FULL");
+            clientHandler.sendMessage(gson.toJson(serverFullMsg));
+            try {
+                clientHandler.clientSocket.close();
+            } catch (IOException e) { /* ignore */ }
+            Log.d(TAG_SERVER, "Client connection rejected, server full. Name: " + playerName);
+            return;
+        }
+
+        int playerId = nextPlayerId.getAndIncrement();
+        clientHandler.setPlayerId(playerId);
+        // Cycle through colors, ensure enough colors if MAX_PLAYERS increases
+        String playerColor = playerColors[clients.size() % playerColors.length];
+
+        float initialX = SCREEN_WIDTH / 2f + (new Random().nextInt(100) - 50); // Slightly random start X
+        float initialY = SCREEN_HEIGHT / 2f + (new Random().nextInt(100) - 50); // Slightly random start Y
+        PlayerData newPlayer = new PlayerData(playerId, playerName, initialX, initialY, playerColor);
+        players.put(playerId, newPlayer);
+        clients.add(clientHandler);
+
+        Map<String, Object> welcomeMsg = new HashMap<>();
+        welcomeMsg.put("type", "WELCOME");
+        welcomeMsg.put("playerId", playerId);
+        welcomeMsg.put("initialGameState", getCurrentGameStateMap());
+        clientHandler.sendMessage(gson.toJson(welcomeMsg));
+
+        Map<String, Object> playerJoinedMsg = new HashMap<>();
+        playerJoinedMsg.put("type", "PLAYER_JOINED");
+        playerJoinedMsg.put("player", newPlayer);
+        broadcastMessage(gson.toJson(playerJoinedMsg), clientHandler);
+
+        Log.d(TAG_SERVER, "Player " + playerId + " (" + playerName + ") joined. Total clients: " + clients.size());
+
+        // Start game if not already running and conditions met (e.g., at least 1 player)
+        if (!gameRunning && clients.size() >= 1) { // Or use MAX_PLAYERS to wait for full lobby
+            startGame();
+        } else if (gameRunning) {
+            // If game is already running, new player gets current state via WELCOME and regular broadcasts
+            Log.d(TAG_SERVER, "Game already running, new player joins ongoing game.");
+        }
+    }
+
+    public synchronized void removeClient(ClientHandler clientHandler) {
+        boolean removed = clients.remove(clientHandler);
+        if (removed && clientHandler.getPlayerId() != -1) {
+            players.remove(clientHandler.getPlayerId());
+            Map<String, Object> playerLeftMsg = new HashMap<>();
+            playerLeftMsg.put("type", "PLAYER_LEFT");
+            playerLeftMsg.put("playerId", clientHandler.getPlayerId());
+            broadcastMessage(gson.toJson(playerLeftMsg), null);
+            Log.d(TAG_SERVER, "Player " + clientHandler.getPlayerId() + " removed. Total clients: " + clients.size());
+        }
+        if (clients.isEmpty() && gameRunning) {
+            Log.d(TAG_SERVER, "All clients disconnected, ending game.");
+            endGame();
+        }
+    }
+
+    private Map<String, Object> getCurrentGameStateMap() {
+        Map<String, Object> gameState = new HashMap<>();
+        gameState.put("timer", remainingTimeSeconds);
+        // Make defensive copies of lists for thread safety when serializing
+        gameState.put("players", new ArrayList<>(players.values()));
+        gameState.put("foods", new ArrayList<>(foods));
+        return gameState;
+    }
+
+    private void broadcastGameStateIfRunning() {
+        if (gameRunning && !clients.isEmpty()) {
+            broadcastGameState();
+        }
+    }
+
+    public void broadcastGameState() {
+        Map<String, Object> gameStateUpdate = new HashMap<>();
+        gameStateUpdate.put("type", "GAME_STATE_UPDATE");
+        gameStateUpdate.put("timer", remainingTimeSeconds);
+        gameStateUpdate.put("players", new ArrayList<>(players.values()));
+        gameStateUpdate.put("foods", new ArrayList<>(foods));
+        broadcastMessage(gson.toJson(gameStateUpdate), null);
+    }
+
+    public void broadcastMessage(String message, ClientHandler excludeClient) {
+        for (ClientHandler client : clients) {
+            if (client != excludeClient) {
+                client.sendMessage(message);
+            }
+        }
+    }
+
+    public synchronized void updatePlayerPosition(int playerId, float x, float y) {
+        PlayerData player = players.get(playerId);
+        if (player != null) {
+            player.x = x;
+            player.y = y;
+            // Position updated. It will be broadcast by the broadcastScheduler.
+        }
+    }
+
+    public synchronized void handlePlayerAteFood(int playerId, int foodId) {
+        PlayerData player = players.get(playerId);
+        FoodData eatenFood = null;
+        for (FoodData food : foods) {
+            if (food.id == foodId) {
+                eatenFood = food;
+                break;
+            }
+        }
+
+        if (player != null && eatenFood != null) {
+            float dx = player.x - eatenFood.x;
+            float dy = player.y - eatenFood.y;
+            float distance = (float) Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < PLAYER_RADIUS + FoodData.RADIUS) {
+                boolean foodRemoved = foods.remove(eatenFood); // Try to remove
+                if (foodRemoved) { // Only process if successfully removed (prevents double eating)
+                    player.score += 10;
+                    Log.d(TAG_SERVER, "Player " + playerId + " ate food " + foodId + ". New score: " + player.score);
+
+                    Map<String, Object> foodEatenMsg = new HashMap<>();
+                    foodEatenMsg.put("type", "FOOD_EATEN");
+                    foodEatenMsg.put("foodId", eatenFood.id);
+                    foodEatenMsg.put("eaterPlayerId", playerId);
+                    foodEatenMsg.put("newScore", player.score); // Client can use this for immediate feedback
+                    broadcastMessage(gson.toJson(foodEatenMsg), null);
+
+                    spawnNewFood(true); // Spawn new food and broadcast
+                } else {
+                    Log.w(TAG_SERVER,"Player " + playerId + " tried to eat food " + foodId + " but it was already gone (race condition?).");
+                }
+            } else {
+                Log.w(TAG_SERVER, "Player " + playerId + " reported eating food " + foodId + " but server collision check failed. Dist: " + distance);
+            }
+        }
+    }
+
+    private void spawnNewFood(boolean broadcast) {
+        if (foods.size() < MAX_FOODS_ON_SCREEN) {
+            Random random = new Random();
+            float x = random.nextInt((int) (SCREEN_WIDTH - 2 * FoodData.RADIUS)) + FoodData.RADIUS;
+            float y = random.nextInt((int) (SCREEN_HEIGHT - 2 * FoodData.RADIUS)) + FoodData.RADIUS;
+            FoodData newFood = new FoodData(nextFoodId.getAndIncrement(), x, y);
+            foods.add(newFood);
+            Log.d(TAG_SERVER, "Spawned new food ID: " + newFood.id + " at (" + x + "," + y + ")");
+
+            if (broadcast) {
+                Map<String, Object> foodSpawnedMsg = new HashMap<>();
+                foodSpawnedMsg.put("type", "FOOD_SPAWNED");
+                foodSpawnedMsg.put("food", newFood);
+                broadcastMessage(gson.toJson(foodSpawnedMsg), null);
+            }
+        }
+    }
+
+    private synchronized void startGame() {
+        if (gameRunning) {
+            Log.d(TAG_SERVER, "startGame called but game already running.");
+            return;
+        }
+        remainingTimeSeconds = GAME_DURATION_SECONDS;
+
+        // Reset scores for all current players
+        for (PlayerData player : players.values()) {
+            player.score = 0;
+        }
+        Log.d(TAG_SERVER, "Player scores reset for new game.");
+
+        // Clear existing food and spawn new set
+        foods.clear();
+        for (int i = 0; i < MAX_FOODS_ON_SCREEN; i++) {
+            spawnNewFood(false); // Don't broadcast individually, will be in first game state
+        }
+        Log.d(TAG_SERVER, "Food res-pawned for new game.");
+
+
+        // Start the 1-second countdown timer
+        countdownTimer = new Timer("GameCountdownTimer", true); // Daemon thread
+        countdownTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                if (!gameRunning) { // If gameRunning becomes false elsewhere (e.g. endGame)
+                    this.cancel();
+                    Log.d(TAG_SERVER, "Countdown timer task cancelled.");
+                    return;
+                }
+
+                if (remainingTimeSeconds > 0) {
+                    remainingTimeSeconds--;
+                }
+                // The broadcastScheduler handles broadcasting the state, including the new time
+
+                if (remainingTimeSeconds <= 0) {
+                    Log.d(TAG_SERVER, "Countdown timer: Time is up. Calling endGame.");
+                    endGame(); // This will set gameRunning to false and cancel this timer
+                }
+            }
+        }, 1000, 1000); // Delay 1s, period 1s
+
+        gameRunning = true; // Set gameRunning to true AFTER scheduling timer
+        Log.d(TAG_SERVER, "Game started! Duration: " + GAME_DURATION_SECONDS + "s. Countdown timer scheduled.");
+        // First broadcast of game state with new timer will happen via broadcastScheduler
+    }
+
+    private synchronized void endGame() {
+        if (!gameRunning) {
+            Log.d(TAG_SERVER, "endGame called but game not running.");
+            return;
+        }
+        gameRunning = false; // ★★★ Set this first to stop broadcasts and countdown task
+        Log.d(TAG_SERVER, "Ending game. gameRunning set to false.");
+
+        if (countdownTimer != null) {
+            countdownTimer.cancel();
+            countdownTimer.purge();
+            countdownTimer = null;
+            Log.d(TAG_SERVER, "Countdown timer cancelled and purged.");
+        }
+
+        PlayerData winner = null;
+        int maxScore = -1;
+        List<Map<String, Object>> finalScoresList = new ArrayList<>();
+
+        for (PlayerData player : players.values()) {
+            Map<String, Object> scoreEntry = new HashMap<>();
+            scoreEntry.put("id", player.id);
+            scoreEntry.put("name", player.name);
+            scoreEntry.put("score", player.score);
+            finalScoresList.add(scoreEntry);
+
+            if (player.score > maxScore) {
+                maxScore = player.score;
+                winner = player;
+            } else if (player.score == maxScore && player.score != -1) { // Handle ties (simple: first one wins or no one)
+                winner = null; // Or some other tie-breaking logic
+            }
+        }
+
+        Map<String, Object> gameOverMsg = new HashMap<>();
+        gameOverMsg.put("type", "GAME_OVER");
+        gameOverMsg.put("winnerId", winner != null ? winner.id : -1);
+        gameOverMsg.put("winnerName", winner != null ? winner.name : (maxScore != -1 ? "Tie / Multiple Winners" : "N/A"));
+        gameOverMsg.put("scores", finalScoresList);
+        broadcastMessage(gson.toJson(gameOverMsg), null);
+        Log.d(TAG_SERVER, "GAME_OVER message broadcast.");
+
+        // Optionally, prepare for a new game automatically or wait for players
+        // resetForNewGame();
+    }
+
+    public void shutdown() {
+        Log.d(TAG_SERVER, "Server shutting down...");
+        if (gameRunning) {
+            endGame(); // Ensure game ends cleanly if it was running
+        }
+        if (broadcastScheduler != null && !broadcastScheduler.isShutdown()) {
+            broadcastScheduler.shutdown();
+            try {
+                if (!broadcastScheduler.awaitTermination(2, TimeUnit.SECONDS)) {
+                    broadcastScheduler.shutdownNow();
+                }
+                Log.d(TAG_SERVER, "Broadcast scheduler shut down.");
+            } catch (InterruptedException e) {
+                broadcastScheduler.shutdownNow();
+                Log.e(TAG_SERVER, "Interrupted while shutting down broadcast scheduler.", e);
+                Thread.currentThread().interrupt();
+            }
+        }
+        // Close all client connections
+        for (ClientHandler client : new ArrayList<>(clients)) { // Iterate over a copy
+            try {
+                client.clientSocket.close(); // This should trigger ClientHandler's finally block
+            } catch (IOException e) { /* ignore */ }
+        }
+        clients.clear();
+        players.clear();
+        Log.d(TAG_SERVER, "All client connections closed. Server shutdown complete.");
+    }
+
+    public static void main(String[] args) {
+        GameServer server = new GameServer();
+        // Add a shutdown hook to ensure server.shutdown() is called on JVM exit
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            Log.d(TAG_SERVER, "Shutdown hook triggered.");
+            server.shutdown();
+        }));
+        server.start(); // This will block until serverSocket is closed or interrupted
+    }
+}

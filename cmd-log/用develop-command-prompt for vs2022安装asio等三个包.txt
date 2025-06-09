@@ -1,0 +1,176 @@
+**********************************************************************
+** Visual Studio 2022 Developer Command Prompt v17.13.7
+** Copyright (c) 2022 Microsoft Corporation
+**********************************************************************
+
+C:\Windows\System32>cd /d E:\game-server-cpp\dev-cpp\vcpkg
+
+E:\game-server-cpp\dev-cpp\vcpkg>.\vcpkg.exe install asio nlohmann-json spdlog
+warning: The vcpkg E:\game-server-cpp\dev-cpp\vcpkg\vcpkg.exe is using detected vcpkg root E:\game-server-cpp\dev-cpp\vcpkg and ignoring mismatched VCPKG_ROOT environment value C:\Program Files\Microsoft Visual Studio\2022\Community\VC\vcpkg. To suppress this message, unset the environment variable or use the --vcpkg-root command line switch.
+Computing installation plan...
+warning: vcpkg appears to be in a Visual Studio prompt targeting x86 but installing for x64-windows. Consider using --triplet x86-windows or --triplet x86-uwp.
+The following packages will be built and installed:
+    asio:x64-windows@1.32.0
+  * fmt:x64-windows@11.0.2#1
+    nlohmann-json:x64-windows@3.12.0
+    spdlog:x64-windows@1.15.3
+  * vcpkg-cmake:x64-windows@2024-04-23
+  * vcpkg-cmake-config:x64-windows@2024-05-23
+Additional packages (*) will be modified to complete this operation.
+Detecting compiler hash for triplet x64-windows...
+-- Automatically setting %HTTP(S)_PROXY% environment variables to "127.0.0.1:33210".
+A suitable version of powershell-core was not found (required v7.2.24).
+Downloading https://github.com/PowerShell/PowerShell/releases/download/v7.2.24/PowerShell-7.2.24-win-x64.zip -> PowerShell-7.2.24-win-x64.zip
+Successfully downloaded PowerShell-7.2.24-win-x64.zip
+Extracting powershell-core...
+Compiler found: C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.43.34808/bin/Hostx64/x64/cl.exe
+Restored 0 package(s) from C:\Users\13040\AppData\Local\vcpkg\archives in 665 us. Use --debug to see more details.
+Installing 1/6 vcpkg-cmake:x64-windows@2024-04-23...
+Building vcpkg-cmake:x64-windows@2024-04-23...
+-- Installing: E:/game-server-cpp/dev-cpp/vcpkg/packages/vcpkg-cmake_x64-windows/share/vcpkg-cmake/vcpkg_cmake_configure.cmake
+-- Installing: E:/game-server-cpp/dev-cpp/vcpkg/packages/vcpkg-cmake_x64-windows/share/vcpkg-cmake/vcpkg_cmake_build.cmake
+-- Installing: E:/game-server-cpp/dev-cpp/vcpkg/packages/vcpkg-cmake_x64-windows/share/vcpkg-cmake/vcpkg_cmake_install.cmake
+-- Installing: E:/game-server-cpp/dev-cpp/vcpkg/packages/vcpkg-cmake_x64-windows/share/vcpkg-cmake/vcpkg-port-config.cmake
+-- Installing: E:/game-server-cpp/dev-cpp/vcpkg/packages/vcpkg-cmake_x64-windows/share/vcpkg-cmake/copyright
+-- Performing post-build validation
+Starting submission of vcpkg-cmake:x64-windows@2024-04-23 to 1 binary cache(s) in the background
+Elapsed time to handle vcpkg-cmake:x64-windows: 110 ms
+vcpkg-cmake:x64-windows package ABI: a249fd6db0f68d1f689b4f12fa8a8079ca9bfb66c47d71592873606a59bdc2e8
+Installing 2/6 vcpkg-cmake-config:x64-windows@2024-05-23...
+Building vcpkg-cmake-config:x64-windows@2024-05-23...
+-- Installing: E:/game-server-cpp/dev-cpp/vcpkg/packages/vcpkg-cmake-config_x64-windows/share/vcpkg-cmake-config/vcpkg_cmake_config_fixup.cmake
+-- Installing: E:/game-server-cpp/dev-cpp/vcpkg/packages/vcpkg-cmake-config_x64-windows/share/vcpkg-cmake-config/vcpkg-port-config.cmake
+-- Installing: E:/game-server-cpp/dev-cpp/vcpkg/packages/vcpkg-cmake-config_x64-windows/share/vcpkg-cmake-config/copyright
+-- Skipping post-build validation due to VCPKG_POLICY_EMPTY_PACKAGE
+Starting submission of vcpkg-cmake-config:x64-windows@2024-05-23 to 1 binary cache(s) in the background
+Elapsed time to handle vcpkg-cmake-config:x64-windows: 121 ms
+vcpkg-cmake-config:x64-windows package ABI: c97909f4e0a93b2c586c7bf093db02345e7ab76af3fb2b189af035cb998a7fa3
+Completed submission of vcpkg-cmake:x64-windows@2024-04-23 to 1 binary cache(s) in 78.6 ms
+Installing 3/6 asio:x64-windows@1.32.0...
+Building asio:x64-windows@1.32.0...
+Downloading https://github.com/chriskohlhoff/asio/archive/asio-1-32-0.tar.gz -> chriskohlhoff-asio-asio-1-32-0.tar.gz
+Successfully downloaded chriskohlhoff-asio-asio-1-32-0.tar.gz
+-- Extracting source E:/game-server-cpp/dev-cpp/vcpkg/downloads/chriskohlhoff-asio-asio-1-32-0.tar.gz
+-- Using source at E:/game-server-cpp/dev-cpp/vcpkg/buildtrees/asio/src/sio-1-32-0-e4cfb7a1b9.clean
+-- Found external ninja('1.12.1').
+-- Configuring x64-windows
+-- Building x64-windows-rel
+-- Fixing pkgconfig file: E:/game-server-cpp/dev-cpp/vcpkg/packages/asio_x64-windows/share/pkgconfig/asio.pc
+Downloading msys2-mingw-w64-x86_64-pkgconf-1~2.3.0-1-any.pkg.tar.zst, trying https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-pkgconf-1~2.3.0-1-any.pkg.tar.zst
+Successfully downloaded msys2-mingw-w64-x86_64-pkgconf-1~2.3.0-1-any.pkg.tar.zst
+Downloading msys2-msys2-runtime-3.5.4-2-x86_64.pkg.tar.zst, trying https://mirror.msys2.org/msys/x86_64/msys2-runtime-3.5.4-2-x86_64.pkg.tar.zst
+Successfully downloaded msys2-msys2-runtime-3.5.4-2-x86_64.pkg.tar.zst
+-- Using msys root at E:/game-server-cpp/dev-cpp/vcpkg/downloads/tools/msys2/21caed2f81ec917b
+-- Installing: E:/game-server-cpp/dev-cpp/vcpkg/packages/asio_x64-windows/share/asio/asio-config.cmake
+-- Installing: E:/game-server-cpp/dev-cpp/vcpkg/packages/asio_x64-windows/share/asio/copyright
+-- Performing post-build validation
+Starting submission of asio:x64-windows@1.32.0 to 1 binary cache(s) in the background
+Elapsed time to handle asio:x64-windows: 26 s
+asio:x64-windows package ABI: e2a400dc2a940be857dea551407e54eae1f51fc4af37b21e3c2732ed79f533fe
+Completed submission of vcpkg-cmake-config:x64-windows@2024-05-23 to 1 binary cache(s) in 53.1 ms
+Installing 4/6 fmt:x64-windows@11.0.2#1...
+Building fmt:x64-windows@11.0.2#1...
+Downloading https://github.com/fmtlib/fmt/archive/11.0.2.tar.gz -> fmtlib-fmt-11.0.2.tar.gz
+Successfully downloaded fmtlib-fmt-11.0.2.tar.gz
+-- Extracting source E:/game-server-cpp/dev-cpp/vcpkg/downloads/fmtlib-fmt-11.0.2.tar.gz
+-- Applying patch fix-write-batch.patch
+-- Applying patch fix-pass-utf-8-only-if-the-compiler-is-MSVC-at-build.patch
+-- Using source at E:/game-server-cpp/dev-cpp/vcpkg/buildtrees/fmt/src/11.0.2-c30c0a133f.clean
+-- Found external ninja('1.12.1').
+-- Configuring x64-windows
+-- Building x64-windows-dbg
+-- Building x64-windows-rel
+-- Fixing pkgconfig file: E:/game-server-cpp/dev-cpp/vcpkg/packages/fmt_x64-windows/lib/pkgconfig/fmt.pc
+-- Using cached msys2-mingw-w64-x86_64-pkgconf-1~2.3.0-1-any.pkg.tar.zst
+-- Using cached msys2-msys2-runtime-3.5.4-2-x86_64.pkg.tar.zst
+-- Using msys root at E:/game-server-cpp/dev-cpp/vcpkg/downloads/tools/msys2/21caed2f81ec917b
+-- Fixing pkgconfig file: E:/game-server-cpp/dev-cpp/vcpkg/packages/fmt_x64-windows/debug/lib/pkgconfig/fmt.pc
+-- Installing: E:/game-server-cpp/dev-cpp/vcpkg/packages/fmt_x64-windows/share/fmt/usage
+-- Installing: E:/game-server-cpp/dev-cpp/vcpkg/packages/fmt_x64-windows/share/fmt/copyright
+-- Performing post-build validation
+Starting submission of fmt:x64-windows@11.0.2#1 to 1 binary cache(s) in the background
+Elapsed time to handle fmt:x64-windows: 9.8 s
+fmt:x64-windows package ABI: ac679b885aa22e24881e098a8fa264b3f762b9a22085d52f41ddc878c67d2d5a
+Completed submission of asio:x64-windows@1.32.0 to 1 binary cache(s) in 178 ms
+Installing 5/6 nlohmann-json:x64-windows@3.12.0...
+Building nlohmann-json:x64-windows@3.12.0...
+Downloading https://github.com/nlohmann/json/archive/v3.12.0.tar.gz -> nlohmann-json-v3.12.0.tar.gz
+Successfully downloaded nlohmann-json-v3.12.0.tar.gz
+-- Extracting source E:/game-server-cpp/dev-cpp/vcpkg/downloads/nlohmann-json-v3.12.0.tar.gz
+-- Using source at E:/game-server-cpp/dev-cpp/vcpkg/buildtrees/nlohmann-json/src/v3.12.0-1a1eb3c42a.clean
+-- Found external ninja('1.12.1').
+-- Configuring x64-windows
+-- Building x64-windows-dbg
+-- Building x64-windows-rel
+-- Fixing pkgconfig file: E:/game-server-cpp/dev-cpp/vcpkg/packages/nlohmann-json_x64-windows/share/pkgconfig/nlohmann_json.pc
+-- Using cached msys2-mingw-w64-x86_64-pkgconf-1~2.3.0-1-any.pkg.tar.zst
+-- Using cached msys2-msys2-runtime-3.5.4-2-x86_64.pkg.tar.zst
+-- Using msys root at E:/game-server-cpp/dev-cpp/vcpkg/downloads/tools/msys2/21caed2f81ec917b
+-- Fixing pkgconfig file: E:/game-server-cpp/dev-cpp/vcpkg/packages/nlohmann-json_x64-windows/debug/share/pkgconfig/nlohmann_json.pc
+-- Installing: E:/game-server-cpp/dev-cpp/vcpkg/packages/nlohmann-json_x64-windows/share/nlohmann-json/copyright
+-- Performing post-build validation
+Starting submission of nlohmann-json:x64-windows@3.12.0 to 1 binary cache(s) in the background
+Elapsed time to handle nlohmann-json:x64-windows: 7.8 s
+nlohmann-json:x64-windows package ABI: 82d7df2a5a6662c1f6a820f8cd34ed011b8d6002cec7b71629704c6688f18960
+Completed submission of fmt:x64-windows@11.0.2#1 to 1 binary cache(s) in 372 ms
+Installing 6/6 spdlog:x64-windows@1.15.3...
+Building spdlog:x64-windows@1.15.3...
+Downloading https://github.com/gabime/spdlog/archive/v1.15.3.tar.gz -> gabime-spdlog-v1.15.3.tar.gz
+Successfully downloaded gabime-spdlog-v1.15.3.tar.gz
+-- Extracting source E:/game-server-cpp/dev-cpp/vcpkg/downloads/gabime-spdlog-v1.15.3.tar.gz
+-- Using source at E:/game-server-cpp/dev-cpp/vcpkg/buildtrees/spdlog/src/v1.15.3-425e0a81aa.clean
+-- Found external ninja('1.12.1').
+-- Configuring x64-windows
+-- Building x64-windows-dbg
+-- Building x64-windows-rel
+-- Fixing pkgconfig file: E:/game-server-cpp/dev-cpp/vcpkg/packages/spdlog_x64-windows/lib/pkgconfig/spdlog.pc
+-- Using cached msys2-mingw-w64-x86_64-pkgconf-1~2.3.0-1-any.pkg.tar.zst
+-- Using cached msys2-msys2-runtime-3.5.4-2-x86_64.pkg.tar.zst
+-- Using msys root at E:/game-server-cpp/dev-cpp/vcpkg/downloads/tools/msys2/21caed2f81ec917b
+-- Fixing pkgconfig file: E:/game-server-cpp/dev-cpp/vcpkg/packages/spdlog_x64-windows/debug/lib/pkgconfig/spdlog.pc
+-- Installing: E:/game-server-cpp/dev-cpp/vcpkg/packages/spdlog_x64-windows/share/spdlog/usage
+-- Installing: E:/game-server-cpp/dev-cpp/vcpkg/packages/spdlog_x64-windows/share/spdlog/copyright
+-- Performing post-build validation
+Starting submission of spdlog:x64-windows@1.15.3 to 1 binary cache(s) in the background
+Elapsed time to handle spdlog:x64-windows: 13 s
+spdlog:x64-windows package ABI: f07000efa2ba57f4bdfb39103662f604c579270eb20a96f4f520aa10ff83881b
+Total install time: 57 s
+asio provides CMake targets:
+
+  # this is heuristically generated, and may not be correct
+  find_package(asio CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE asio::asio)
+
+asio provides pkg-config modules:
+
+  # A cross-platform C++ library for network and low-level I/O programming that provides developers with a consistent asynchronous model using a modern C++ approach.
+  asio
+
+The package nlohmann-json provides CMake targets:
+
+    find_package(nlohmann_json CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE nlohmann_json::nlohmann_json)
+
+The package nlohmann-json can be configured to not provide implicit conversions via a custom triplet file:
+
+    set(nlohmann-json_IMPLICIT_CONVERSIONS OFF)
+
+For more information, see the docs here:
+
+    https://json.nlohmann.me/api/macros/json_use_implicit_conversions/
+
+The package spdlog provides CMake targets:
+
+    find_package(spdlog CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE spdlog::spdlog)
+
+    # Or use the header-only version
+    find_package(spdlog CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE spdlog::spdlog_header_only)
+
+Completed submission of nlohmann-json:x64-windows@3.12.0 to 1 binary cache(s) in 87.8 ms
+Waiting for 1 remaining binary cache submissions...
+Completed submission of spdlog:x64-windows@1.15.3 to 1 binary cache(s) in 1.1 s (1/1)
+All requested installations completed successfully in: 57 s
+
+E:\game-server-cpp\dev-cpp\vcpkg>

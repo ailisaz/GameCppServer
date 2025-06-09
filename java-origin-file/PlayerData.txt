@@ -1,0 +1,19 @@
+package org.example;
+
+public class PlayerData {
+    public int id;
+    public String name;
+    public float x, y;
+    public int score;
+    public String colorHex; // 例如 "#FF0000" 代表红色
+
+    public PlayerData(int id, String name, float x, float y, String colorHex) {
+        this.id = id;
+        this.name = name;
+        this.x = x;
+        this.y = y;
+        this.score = 0;
+        this.colorHex = colorHex;
+    }
+    // Getters and setters, or make fields public for simplicity in this example
+}

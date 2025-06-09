@@ -1,0 +1,13 @@
+package org.example;
+
+public class FoodData {
+    public int id;
+    public float x, y;
+    public static float RADIUS = 20f; // 与客户端 Food.radius 保持一致
+
+    public FoodData(int id, float x, float y) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+    }
+}

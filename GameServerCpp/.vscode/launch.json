@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(Windows) Launch GameServer",
+            "type": "cppvsdbg", // 使用 Visual Studio 调试器
+            "request": "launch",
+            // ${command:cmake.launchTargetPath} 是一个神奇的变量，
+            // 它会自动获取当前CMake选定目标的路径。
+            "program": "${command:cmake.launchTargetPath}",
+            "args": [],
+            "stopAtEntry": false,
+            // 程序运行的工作目录，设置为可执行文件所在的目录
+            "cwd": "${command:cmake.launchTargetDirectory}",
+            "environment": [],
+            // 在一个单独的命令行窗口中运行程序，而不是在VS Code的调试控制台
+            "externalConsole": true 
+        }
+    ]
+}
