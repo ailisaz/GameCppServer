@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 #include <mutex>
+//#include <recursive_mutex>
 #include <atomic>
 #include "DataTypes.h"
 
@@ -76,7 +77,8 @@ private:
     std::vector<std::thread> m_threadPool; // 线程池来运行 io_context
 
     // --- 游戏状态 (线程安全) ---
-    std::mutex m_mutex; // 保护所有游戏状态数据
+    //std::mutex m_mutex; // 保护所有游戏状态数据
+    std::recursive_mutex m_mutex; // 使用递归锁
     std::unordered_map<int, std::shared_ptr<ClientSession>> m_clients;
     std::unordered_map<int, PlayerData> m_players;
     std::vector<FoodData> m_foods;

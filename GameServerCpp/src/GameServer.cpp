@@ -98,7 +98,7 @@ void GameServer::DoAccept() {
 
 // 处理新客户端连接请求
 void GameServer::HandleClientConnect(std::shared_ptr<ClientSession> session, const std::string& playerName) {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
     if (m_players.size() >= MAX_PLAYERS) {
         spdlog::warn("Client connection rejected, server full. Name: {}", playerName);
@@ -142,7 +142,7 @@ void GameServer::HandleClientConnect(std::shared_ptr<ClientSession> session, con
 }
 
 void GameServer::RemoveClient(std::shared_ptr<ClientSession> session) {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     int playerId = session->GetPlayerId();
     if (playerId == -1) return;
 
@@ -170,7 +170,7 @@ void GameServer::BroadcastMessage(const std::string& message, std::shared_ptr<Cl
     // 这里我们复制一份需要发送的会话列表，避免在迭代时持有锁太久
     std::vector<std::shared_ptr<ClientSession>> recipients;
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::lock_guard<std::recursive_mutex> lock(m_mutex);
         for(const auto& pair : m_clients) {
             if(pair.second != exclude_session) {
                 recipients.push_back(pair.second);
@@ -184,7 +184,7 @@ void GameServer::BroadcastMessage(const std::string& message, std::shared_ptr<Cl
 }
 
 void GameServer::UpdatePlayerPosition(int playerId, float x, float y) {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     auto it = m_players.find(playerId);
     if (it != m_players.end()) {
         it->second.x = x;
@@ -193,7 +193,7 @@ void GameServer::UpdatePlayerPosition(int playerId, float x, float y) {
 }
 
 void GameServer::HandlePlayerAteFood(int playerId, int foodId) {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
     auto player_it = m_players.find(playerId);
     if (player_it == m_players.end()) return;
@@ -308,7 +308,7 @@ void GameServer::EndGame() {
     m_gameCountdownTimer.cancel();
     m_broadcastTimer.cancel();
 
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
     PlayerData* winner = nullptr;
     int maxScore = -1;
@@ -367,7 +367,7 @@ void GameServer::BroadcastGameState(const asio::error_code& ec) {
 
     nlohmann::json stateUpdate;
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::lock_guard<std::recursive_mutex> lock(m_mutex);
         stateUpdate["type"] = "GAME_STATE_UPDATE";
         stateUpdate.update(GetCurrentGameStateJson());
     }
